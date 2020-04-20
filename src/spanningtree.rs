@@ -1,14 +1,13 @@
 
 struct Node {
     id: usize,
-    name: char,
+    name: &'static str,
     msg_count: usize,
     next_hop: isize,
     root_cost: usize,
     root_id: usize,
 }
 
-#[derive(Debug)]
 struct Link {
     members: (usize, usize),
     cost: usize
@@ -21,7 +20,7 @@ struct Tree {
 }
 
 impl Node {
-    fn new(id: usize, name: char) -> Self {
+    fn new(id: usize, name: &'static str) -> Self {
         Node {
             id,
             name,
@@ -93,9 +92,23 @@ mod tree_tests {
         assert_eq!(unwrapped_link.cost, 5);
         assert_eq!(tree.find_link(7, 9).is_none(), true);
     }
+
+    
 }
 
 #[cfg(test)]
 mod link_test {
     
+}
+
+#[cfg(test)]
+mod node_test {
+    use super::*;
+
+    #[test]
+    fn test_node() {
+        let mut node = Node::new(1, "A");
+        assert_eq!(node.root_id, 1);
+        assert_eq!(node.name, "A");
+    }
 }
