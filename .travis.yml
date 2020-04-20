@@ -7,3 +7,21 @@ jobs:
   allow_failures:
     - rust: nightly
   fast_finish: true
+
+addons:
+  apt:
+    packages:
+      - libcurl4-openssl-dev
+      - libelf-dev
+      - libdw-dev
+      - binutils-dev
+      - libiberty-dev
+      - gcc-multilib
+
+after_success:
+  - >
+    if [ "$TRAVIS_OS_NAME" = 'linux' ]; then
+      cargo install cargo-kcov &&
+      ( cargo kcov --print-install-kcov-sh | bash ) &&
+      cargo kcov --coveralls
+    fi
