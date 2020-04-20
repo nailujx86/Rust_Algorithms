@@ -1,3 +1,5 @@
+mod spanningtree;
+
 #[cfg(test)]
 mod tests {
     #[test]
