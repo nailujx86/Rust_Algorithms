@@ -1,39 +1,59 @@
+#![feature(nll)]
 
-struct Node {
-    id: usize,
+use std::convert::TryInto;
+use std::convert::AsMut;
+
+
+pub struct Node {
+    id: isize,
     name: &'static str,
     msg_count: usize,
-    next_hop: isize,
+    next_hop: Option<isize>,
     root_cost: usize,
-    root_id: usize,
+    root_id: isize,
 }
 
-struct Link {
-    members: (usize, usize),
+pub struct Link {
+    members: (isize, isize),
     cost: usize
 }
 
-struct Tree {
+pub struct Tree {
     node_list: Vec<Node>,
-    root_id: isize,
+    root_id: Option<isize>,
     link_list: Vec<Link>
 }
 
 impl Node {
-    fn new(id: usize, name: &'static str) -> Self {
+    pub fn new(id: isize, name: &'static str) -> Self {
         Node {
             id,
             name,
             msg_count: 0,
-            next_hop: -1,
+            next_hop: None,
             root_cost: 0,
             root_id: id
         }
     }
+
+    pub fn receive_suggestion(&mut self, suggested_id: isize, source_id: isize, root_cost: usize) -> bool {
+        self.msg_count += 1;
+        if suggested_id < self.root_id {
+            self.root_cost = root_cost;
+            self.next_hop = Some(source_id);
+            self.root_id = suggested_id;
+            return true;
+        } else if suggested_id == self.root_id && root_cost < self.root_cost {
+            self.root_cost = root_cost;
+            self.next_hop = Some(source_id);
+            return true;
+        }
+        return false;
+    }
 }
 
 impl Link {
-    fn new(members: (usize, usize), cost: usize) -> Self {
+    pub fn new(members: (isize, isize), cost: usize) -> Self {
         Link {
             members,
             cost
@@ -42,29 +62,69 @@ impl Link {
 }
 
 impl Tree {
-    fn new() -> Self {
+    pub fn new() -> Self {
         Tree {
             node_list: Vec::new(),
-            root_id: -1,
+            root_id: None,
             link_list : Vec::new()
         }
     }
 
-    fn find_link(&mut self, a: usize, b: usize) -> Option<&Link> {
-        let mut foundLink: Option<&Link> = Option::default();
+    pub fn find_link(&mut self, a: isize, b: isize) -> Option<&Link> {
+        let mut found_link: Option<&Link> = Option::default();
         for link in &self.link_list {
             if link.members.0 == a && link.members.1 == b || link.members.0 == b && link.members.1 == a {
-                foundLink = Some(link);
+                found_link = Some(link);
                 break;
             }
         }
-        foundLink
+        found_link
     }
 
-    fn add_link(&mut self, link: Link) {
+    pub fn find_links(&self, node_id: isize) -> Vec<&Link> {
+        let link_list = &self.link_list;
+        link_list.into_iter().filter(|link| link.members.0 == node_id || link.members.1 == node_id).collect()
+    }
+
+    pub fn add_link(&mut self, link: Link) {
         if self.find_link(link.members.0, link.members.1).is_none() {
             self.link_list.push(link);
         }
+    }
+
+    pub fn add_node(&mut self, node: Node) {
+        for node1 in &self.node_list {
+            if node1.id == node.id {
+                return;
+            }
+        }
+        if self.root_id.is_none() || (self.root_id.is_some() && node.id < self.root_id.unwrap()) {
+            self.root_id = Some(node.id);
+        }
+        self.node_list.push(node);
+    }
+
+    pub fn get_node(&mut self, node_id: isize) -> Option<&mut Node> {
+        let mut found_node: Option<&mut Node> = Option::default();
+        for node in &mut self.node_list {
+            if node.id == node_id {
+                found_node = Some(node);
+                break;
+            }
+        }
+        found_node
+    }
+
+    pub fn run_calc(&mut self, node: Node, recursive: bool) {
+        for link in &self.link_list {
+            let other_node = &self.get_node(link.members.0).unwrap();
+            let accepted: bool = other_node.receive_suggestion(node.root_id, node.id, link.cost + node.root_cost);
+            if accepted && recursive {
+                self.run_calc(node, recursive);
+            }
+        }
+        
+        // i hate rust
     }
 }
 
@@ -93,6 +153,15 @@ mod tree_tests {
         assert_eq!(tree.find_link(7, 9).is_none(), true);
     }
 
+    #[test]
+    fn find_links() {
+        let mut tree = Tree::new();
+        tree.add_link(Link::new((1,2), 5));
+        tree.add_link(Link::new((2,5), 8));
+        tree.add_link(Link::new((7,9), 2));
+        let links = tree.find_links(2);
+        assert_eq!(links.len(), 2);
+    }   
     
 }
 
@@ -107,7 +176,7 @@ mod node_test {
 
     #[test]
     fn test_node() {
-        let mut node = Node::new(1, "A");
+        let node = Node::new(1, "A");
         assert_eq!(node.root_id, 1);
         assert_eq!(node.name, "A");
     }
