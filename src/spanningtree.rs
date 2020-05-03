@@ -1,9 +1,7 @@
 #![feature(nll)]
+use rand::Rng;
 
-use std::convert::TryInto;
-use std::convert::AsMut;
-
-
+#[derive(Copy, Clone, Debug)]
 pub struct Node {
     id: isize,
     name: &'static str,
@@ -13,11 +11,13 @@ pub struct Node {
     root_id: isize,
 }
 
+#[derive(Debug)]
 pub struct Link {
     members: (isize, isize),
     cost: usize
 }
 
+#[derive(Debug)]
 pub struct Tree {
     node_list: Vec<Node>,
     root_id: Option<isize>,
@@ -106,25 +106,53 @@ impl Tree {
 
     pub fn get_node(&mut self, node_id: isize) -> Option<&mut Node> {
         let mut found_node: Option<&mut Node> = Option::default();
-        for node in &mut self.node_list {
-            if node.id == node_id {
-                found_node = Some(node);
-                break;
+        if let Some(index) = self.node_list.iter().position(|&node_item| node_item.id == node_id) {
+            let node_item = self.node_list.get_mut(index);
+            match node_item {
+                Some(node) => {
+                    found_node = Some(node);
+                },
+                None => found_node = None
             }
         }
         found_node
     }
 
-    pub fn run_calc(&mut self, node: Node, recursive: bool) {
+    pub fn run_calc(&mut self, node_id: isize) {
+        let root_cost: usize;
+        let root_id: isize;
+            {
+                let node: &Node = &self.node_list.iter().find(|n| n.id == node_id).unwrap();
+                root_cost = node.root_cost;
+                root_id = node.root_id;
+            }
         for link in &self.link_list {
-            let other_node = &self.get_node(link.members.0).unwrap();
-            let accepted: bool = other_node.receive_suggestion(node.root_id, node.id, link.cost + node.root_cost);
-            if accepted && recursive {
-                self.run_calc(node, recursive);
+            if let Some(index) = self.node_list.iter().position(|&node_item| node_item.id == (if node_id == link.members.0 {link.members.1} else if node_id == link.members.1 {link.members.0} else {-1})) {
+                let node_item = self.node_list.get_mut(index);
+                match node_item {
+                    Some(other_node) => {
+                        println!("{}",other_node.id);
+                        other_node.receive_suggestion(root_id, node_id, root_cost + link.cost);
+                    },
+                    None => {}
+                }
             }
         }
         
         // i hate rust
+    }
+
+    pub fn simulate(&mut self, min_iterations: usize, min_hops: usize) {
+        let mut sim_count = 0;
+        while {
+            for i in 0..min_iterations {
+                let randi = rand::thread_rng().gen_range(0, self.node_list.len());
+                sim_count += 1;
+                let nodeid: isize = self.node_list[randi].id;
+                self.run_calc(nodeid);
+            }
+            self.node_list.iter().any(|&node| node.msg_count <= min_hops) && min_hops != 0
+        } {}
     }
 }
 
@@ -179,5 +207,35 @@ mod node_test {
         let node = Node::new(1, "A");
         assert_eq!(node.root_id, 1);
         assert_eq!(node.name, "A");
+    }
+}
+
+mod spanningtree_test {
+    use super::*;
+
+    #[test]
+    fn test_run_calc() {
+        let mut tree = Tree::new();
+        tree.add_node(Node::new(5, "A"));
+        tree.add_node(Node::new(1, "B"));
+        tree.add_node(Node::new(3, "C"));
+        tree.add_node(Node::new(7, "D"));
+        let node2 = Node::new(6, "E");
+        tree.add_node(node2);
+        tree.add_node(Node::new(4, "F"));
+        tree.add_link(Link::new((5, 1), 10));
+        tree.add_link(Link::new((5, 3), 10));
+        tree.add_link(Link::new((1, 7), 15));
+        tree.add_link(Link::new((1, 6), 10));
+        tree.add_link(Link::new((3, 7), 3));
+        tree.add_link(Link::new((3, 6), 10));
+        tree.add_link(Link::new((7, 6), 2));
+        tree.add_link(Link::new((7, 4), 10));
+        tree.add_link(Link::new((6, 4), 2));
+        let node3: &Node = tree.get_node(3).unwrap();
+        tree.simulate(40, 100);
+        for node in tree.node_list {
+            println!("ID: {}, Name: {}, Messages: {}, Next Hop: {}, Root Cost: {}, Root ID: {}", node.id, node.name, node.msg_count, node.next_hop.unwrap_or(0), node.root_cost, node.root_id);
+        }
     }
 }
