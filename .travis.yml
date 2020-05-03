@@ -18,10 +18,15 @@ addons:
       - libiberty-dev
       - gcc-multilib
 
+before_script:
+  - |
+      if [ "$TRAVIS_RUST_VERSION" == "nightly" ]; then
+        cargo install -f cargo-travis;
+        export PATH=$HOME/.cargo/bin:$PATH;
+      fi
+
 after_success:
-  - >
-    if [ "$TRAVIS_OS_NAME" = 'linux' ]; then
-      cargo install cargo-kcov &&
-      ( cargo kcov --print-install-kcov-sh | bash ) &&
-      cargo kcov --coveralls
-    fi
+  - |
+      if [ "$TRAVIS_RUST_VERSION" == "nightly" ]; then
+        cargo coveralls --all;
+      fi
