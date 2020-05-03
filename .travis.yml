@@ -19,14 +19,17 @@ addons:
       - gcc-multilib
 
 before_script:
+  - export PATH=$HOME/.cargo/bin:$PATH
+  - cargo install cargo-update || echo "cargo-update already installed"
+  - cargo install cargo-travis || echo "cargo-travis already installed"
+  - cargo install-update -a
+
+script:
   - |
-      if [ "$TRAVIS_RUST_VERSION" == "nightly" ]; then
-        cargo install -f cargo-travis;
-        export PATH=$HOME/.cargo/bin:$PATH;
-      fi
+      cargo build &&
+      cargo test &&
+      cargo bench &&
+      cargo doc
 
 after_success:
-  - |
-      if [ "$TRAVIS_RUST_VERSION" == "nightly" ]; then
-        cargo coveralls --all;
-      fi
+  - cargo coveralls
