@@ -1,4 +1,3 @@
-#![feature(nll)]
 use rand::Rng;
 
 #[derive(Copy, Clone, Debug)]
@@ -232,7 +231,6 @@ mod spanningtree_test {
         tree.add_link(Link::new((7, 6), 2));
         tree.add_link(Link::new((7, 4), 10));
         tree.add_link(Link::new((6, 4), 2));
-        let node3: &Node = tree.get_node(3).unwrap();
         tree.simulate(40, 100);
         for node in tree.node_list {
             println!("ID: {}, Name: {}, Messages: {}, Next Hop: {}, Root Cost: {}, Root ID: {}", node.id, node.name, node.msg_count, node.next_hop.unwrap_or(0), node.root_cost, node.root_id);
