@@ -117,7 +117,7 @@ impl Tree {
         found_node
     }
 
-    pub fn run_calc(&mut self, node_id: isize) {
+    pub fn run_calc(&mut self, node_id: isize, recursive: bool) {
         let root_cost: usize;
         let root_id: isize;
             {
@@ -125,30 +125,33 @@ impl Tree {
                 root_cost = node.root_cost;
                 root_id = node.root_id;
             }
+        let mut recursive_vec: Vec<isize> = Vec::new();
         for link in &self.link_list {
             if let Some(index) = self.node_list.iter().position(|&node_item| node_item.id == (if node_id == link.members.0 {link.members.1} else if node_id == link.members.1 {link.members.0} else {-1})) {
                 let node_item = self.node_list.get_mut(index);
                 match node_item {
                     Some(other_node) => {
-                        println!("{}",other_node.id);
-                        other_node.receive_suggestion(root_id, node_id, root_cost + link.cost);
+                        let accept = other_node.receive_suggestion(root_id, node_id, root_cost + link.cost);
+                        if accept && recursive {
+                            recursive_vec.push(other_node.id);
+                        }
                     },
                     None => {}
                 }
             }
         }
-        
+        for id in recursive_vec {
+            self.run_calc(id, recursive);
+        }
         // i hate rust
     }
 
-    pub fn simulate(&mut self, min_iterations: usize, min_hops: usize) {
-        let mut sim_count = 0;
+    pub fn simulate(&mut self, min_iterations: usize, min_hops: usize, recursive: bool) {
         while {
             for i in 0..min_iterations {
                 let randi = rand::thread_rng().gen_range(0, self.node_list.len());
-                sim_count += 1;
                 let nodeid: isize = self.node_list[randi].id;
-                self.run_calc(nodeid);
+                self.run_calc(nodeid, recursive);
             }
             self.node_list.iter().any(|&node| node.msg_count <= min_hops) && min_hops != 0
         } {}
@@ -188,29 +191,7 @@ mod tree_tests {
         tree.add_link(Link::new((7,9), 2));
         let links = tree.find_links(2);
         assert_eq!(links.len(), 2);
-    }   
-    
-}
-
-#[cfg(test)]
-mod link_test {
-    
-}
-
-#[cfg(test)]
-mod node_test {
-    use super::*;
-
-    #[test]
-    fn test_node() {
-        let node = Node::new(1, "A");
-        assert_eq!(node.root_id, 1);
-        assert_eq!(node.name, "A");
     }
-}
-
-mod spanningtree_test {
-    use super::*;
 
     #[test]
     fn test_run_calc() {
@@ -231,9 +212,30 @@ mod spanningtree_test {
         tree.add_link(Link::new((7, 6), 2));
         tree.add_link(Link::new((7, 4), 10));
         tree.add_link(Link::new((6, 4), 2));
-        tree.simulate(40, 100);
+        tree.simulate(10, 10, true);
+        assert_eq!(tree.node_list.iter().all(|node| node.msg_count > 10), true);
+        assert_eq!(tree.node_list.iter().all(|node| node.root_id == 1), true);
+        assert_eq!(tree.get_node(3).unwrap().next_hop.unwrap() == 7, true);
         for node in tree.node_list {
             println!("ID: {}, Name: {}, Messages: {}, Next Hop: {}, Root Cost: {}, Root ID: {}", node.id, node.name, node.msg_count, node.next_hop.unwrap_or(0), node.root_cost, node.root_id);
         }
+    }
+    
+}
+
+#[cfg(test)]
+mod link_test {
+    
+}
+
+#[cfg(test)]
+mod node_test {
+    use super::*;
+
+    #[test]
+    fn test_node() {
+        let node = Node::new(1, "A");
+        assert_eq!(node.root_id, 1);
+        assert_eq!(node.name, "A");
     }
 }
