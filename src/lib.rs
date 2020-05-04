@@ -1,4 +1,4 @@
-mod spanningtree;
+pub mod spanningtree;
 
 #[cfg(test)]
 mod tests {

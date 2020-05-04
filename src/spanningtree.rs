@@ -148,7 +148,7 @@ impl Tree {
 
     pub fn simulate(&mut self, min_iterations: usize, min_hops: usize, recursive: bool) {
         while {
-            for i in 0..min_iterations {
+            for _i in 0..min_iterations {
                 let randi = rand::thread_rng().gen_range(0, self.node_list.len());
                 let nodeid: isize = self.node_list[randi].id;
                 self.run_calc(nodeid, recursive);
