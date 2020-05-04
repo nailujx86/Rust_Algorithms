@@ -1,4 +1,5 @@
 mod spanningtree;
+mod bfs;
 
 #[cfg(test)]
 mod tests {
