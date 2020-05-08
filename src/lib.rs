@@ -1,4 +1,5 @@
-mod bfs;
+pub mod bfstest;
+pub mod dfs;
 pub mod spanningtree;
 
 #[cfg(test)]
