@@ -1,3 +1,5 @@
+use std::convert::TryInto;
+
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Node {
     id: isize,
@@ -18,7 +20,6 @@ pub struct Link {
 #[derive(Clone, Debug, Default)]
 pub struct Tree {
     node_list: Vec<Node>,
-    root_id: Option<isize>,
     link_list: Vec<Link>,
 }
 
@@ -29,14 +30,14 @@ pub struct SearchResult {
 }
 
 impl Node {
-    pub fn new(id: isize, name: &'static str) -> Self {
+    pub fn new(name: &'static str) -> Self {
         Node {
-            id,
+            id: -1,
             name,
             msg_count: 0,
             next_hop: None,
             root_cost: 0,
-            root_id: id,
+            root_id: -1,
             is_discovered: false,
         }
     }
@@ -52,7 +53,6 @@ impl Tree {
     pub fn new() -> Self {
         Tree {
             node_list: Vec::new(),
-            root_id: None,
             link_list: Vec::new(),
         }
     }
@@ -84,34 +84,21 @@ impl Tree {
         }
     }
 
-    pub fn add_node(&mut self, node: Node) {
+    pub fn add_node(&mut self, mut node: Node)-> isize{
         for node1 in &self.node_list {
-            if node1.id == node.id {
-                return;
+            if node1.name == node.name {
+                return node1.id
             }
         }
-        if self.root_id.is_none() || (self.root_id.is_some() && node.id < self.root_id.unwrap()) {
-            self.root_id = Some(node.id);
-        }
+        let len = self.node_list.len();
+        node.id = len.try_into().unwrap();
         self.node_list.push(node);
+        node.id
     }
 
     pub fn get_node(&mut self, node_id: isize) -> Option<&mut Node> {
-        let mut found_node: Option<&mut Node> = Option::default();
-        if let Some(index) = self
-            .node_list
-            .iter()
-            .position(|&node_item| node_item.id == node_id)
-        {
-            let node_item = self.node_list.get_mut(index);
-            match node_item {
-                Some(node) => {
-                    found_node = Some(node);
-                }
-                None => found_node = None,
-            }
-        }
-        found_node
+        let usizeindex: usize = node_id.try_into().unwrap();
+        self.node_list.get_mut(usizeindex)
     }
 
 }
@@ -227,8 +214,8 @@ mod tree_tests {
     #[test]
     fn find_links_from_node(){
         let mut tree = Tree::new();
-        let node1 = Node::new(1, "Node 1");
-        let node2 = Node::new(2, "Node 2");
+        let node1 = Node::new("Node 1");
+        let node2 = Node::new("Node 2");
         tree.add_node(node1);
         tree.add_node(node2);
         let link1 = Link::new((1,1),1);
@@ -249,27 +236,29 @@ mod tree_tests {
     #[test]
     fn add_node(){
         let mut tree = Tree::new();
-        let node = Node::new(1,"Node1");
+        let node = Node::new("Node1");
         tree.add_node(node);
-        assert!(tree.node_list.contains(&&node));
+        assert_eq!(tree.node_list[0].id, 0);
+        assert_eq!(tree.node_list[0].name, node.name);
     }
 
     #[test]
-    fn add_node_already_existing() {
+    fn add_already_existing_node() {
         let mut tree = Tree::new();
-        let node = Node::new(1,"Node1");
-        tree.add_node(node);
-        tree.add_node(node);
-        assert_eq!(tree.node_list.len(), 1);
+        let node = Node::new("Node1");
+        let id1 = tree.add_node(node);
+        let id2 = tree.add_node(node);
+        assert_eq!(id1, id2);
     }
 
     #[test]
     fn get_node(){
         let mut tree = Tree::new();
-        let node = Node::new(1, "Node1");
+        let node = Node::new("Node1");
         tree.add_node(node);
-        let node_retrieved = tree.get_node(1).unwrap();
-        assert_eq!(node_retrieved, &node);
+        println!("{}",node.id);
+        let node_retrieved = tree.get_node(0).unwrap();
+        assert_eq!(node_retrieved.name, node.name);
         let node_retrieved2 = tree.get_node(2);
         assert!(node_retrieved2.is_none());
     }
@@ -284,8 +273,8 @@ mod node_test {
 
     #[test]
     fn test_node() {
-        let node = Node::new(1, "A");
-        assert_eq!(node.root_id, 1);
+        let node = Node::new("A");
+        assert_eq!(node.root_id, -1);
         assert_eq!(node.name, "A");
     }
 }
@@ -297,7 +286,7 @@ mod discover_test {
     #[test]
     fn test_discover_no_start_element() {
         let mut tree = Tree::new();
-        let node1 = Node::new(1, "Node 1");
+        let node1 = Node::new("Node 1");
         tree.add_node(node1);
         assert_eq!(find_path_to_element(tree, 2, 1).is_none(), true);
     }
@@ -305,7 +294,7 @@ mod discover_test {
     #[test]
     fn test_discover_no_target_element() {
         let mut tree = Tree::new();
-        let node1 = Node::new(1, "Node 1");
+        let node1 = Node::new("Node 1");
         tree.add_node(node1);
         assert_eq!(find_path_to_element(tree, 1, 2).is_none(), true);
     }
@@ -319,8 +308,8 @@ mod discover_test {
     #[test]
     fn test_discover_no_link() {
         let mut tree = Tree::new();
-        let node1 = Node::new(1, "Node 1");
-        let node2 = Node::new(1, "Node 1");
+        let node1 = Node::new("Node 1");
+        let node2 = Node::new("Node 1");
         tree.add_node(node1);
         tree.add_node(node2);
         tree.add_link(Link::new((1, 3), 1));
@@ -338,15 +327,14 @@ mod discover_test {
     #[test]
     fn test_discover_two_elements() {
         let mut tree = Tree::new();
-        let node1 = Node::new(1, "Node 1");
-        let node2 = Node::new(2, "Node 2");
-        tree.add_node(node1);
-        tree.add_node(node2);
-        let link1 = Link::new((1, 2), 5);
+        let mut node1 = Node::new("Node 1");
+        let mut node2 = Node::new("Node 2");
+        node1.id = tree.add_node(node1);
+        node2.id = tree.add_node(node2);
+        let link1 = Link::new((node1.id, node2.id), 5);
         tree.add_link(link1);
-        let result = find_path_to_element(tree, 1, 2).unwrap();
-        println!("{:?}", result);
-        let link0 = Link::new((1, 1), 0);
+        let result = find_path_to_element(tree, node1.id, node2.id).unwrap();
+        let link0 = Link::new((node1.id, node1.id), 0);
         assert_eq!(result.links[0], link0);
         assert_eq!(result.links[1], link1);
         assert_eq!(result.cost, 5);
@@ -355,68 +343,67 @@ mod discover_test {
     #[test]
     fn test_discover_multiple_elements() {
         let mut tree = Tree::new();
-        let node1 = Node::new(1, "Node 1");
-        let node2 = Node::new(2, "Node 2");
-        let node3 = Node::new(3, "Node 3");
-        let node4 = Node::new(4, "Node 4");
-        let node5 = Node::new(5, "Node 5");
-        let node6 = Node::new(6, "Node 6");
-        let node7 = Node::new(7, "Node 7");
-        tree.add_node(node1);
-        tree.add_node(node2);
-        tree.add_node(node3);
-        tree.add_node(node4);
-        tree.add_node(node5);
-        tree.add_node(node6);
-        tree.add_node(node7);
-        let link1 = Link::new((1, 3), 1);
-        let link2 = Link::new((1, 2), 1);
-        let link3 = Link::new((2, 4), 2);
-        let link4 = Link::new((3, 5), 1);
-        let link5 = Link::new((3, 6), 1);
-        let link6 = Link::new((4, 7), 1);
+        let mut node1 = Node::new("Node 1");
+        let mut node2 = Node::new("Node 2");
+        let mut node3 = Node::new("Node 3");
+        let mut node4 = Node::new("Node 4");
+        let mut node5 = Node::new("Node 5");
+        let mut node6 = Node::new("Node 6");
+        let mut node7 = Node::new("Node 7");
+        node1.id = tree.add_node(node1);
+        node2.id =tree.add_node(node2);
+        node3.id =tree.add_node(node3);
+        node4.id =tree.add_node(node4);
+        node5.id =tree.add_node(node5);
+        node6.id =tree.add_node(node6);
+        node7.id =tree.add_node(node7);
+        let link1 = Link::new((node1.id, node3.id), 1);
+        let link2 = Link::new((node1.id, node2.id), 1);
+        let link3 = Link::new((node2.id, node4.id), 2);
+        let link4 = Link::new((node3.id, node5.id), 1);
+        let link5 = Link::new((node3.id, node6.id), 1);
+        let link6 = Link::new((node4.id, node7.id), 1);
         tree.add_link(link1);
         tree.add_link(link2);
         tree.add_link(link3);
         tree.add_link(link4);
         tree.add_link(link5);
         tree.add_link(link6);
-        let result = find_path_to_element(tree, 1, 7).unwrap();
+        let result = find_path_to_element(tree, node1.id, node7.id).unwrap();
         assert_eq!(result.cost, 4);
-        assert_eq!(result.links[1], Link::new((1, 2), 1));
-        assert_eq!(result.links[2], Link::new((2, 4), 2));
-        assert_eq!(result.links[3], Link::new((4, 7), 1));
+        assert_eq!(result.links[1], Link::new((node1.id, node2.id), 1));
+        assert_eq!(result.links[2], Link::new((node2.id, node4.id), 2));
+        assert_eq!(result.links[3], Link::new((node4.id, node7.id), 1));
     }
 
     #[test]
     fn discover_elements_with_loose_end_links() {
         let mut tree = Tree::new();
-        let node1 = Node::new(1, "Node 1");
-        let node2 = Node::new(2, "Node 2");
-        tree.add_node(node1);
-        tree.add_node(node2);
-        let link1 = Link::new((1, 2), 1);
-        let link2 = Link::new((1, 3), 1);
+        let mut node1 = Node::new("Node 1");
+        let mut node2 = Node::new("Node 2");
+        node1.id = tree.add_node(node1);
+        node2.id = tree.add_node(node2);
+        let link1 = Link::new((node1.id, node2.id), 1);
+        let link2 = Link::new((1, 65999), 1);
         tree.add_link(link1);
         tree.add_link(link2);
-        let result = find_path_to_element(tree, 1, 2).unwrap();
+        let result = find_path_to_element(tree, node1.id, node2.id).unwrap();
         assert_eq!(result.cost, 1);
-        assert_eq!(result.links[1], Link::new((1, 2), 1));
+        assert_eq!(result.links[1], Link::new((node1.id, node2.id), 1));
     }
 
     #[test]
     fn discover_elements_with_objects_linked_to_themselves() {
         let mut tree = Tree::new();
-        let node1 = Node::new(1, "Node 1");
-        let node2 = Node::new(2, "Node 2");
-        tree.add_node(node1);
-        tree.add_node(node2);
-        let link1 = Link::new((1, 2), 5);
-        let link2 = Link::new((1, 1), 5);
+        let mut node1 = Node::new("Node 1");
+        let mut node2 = Node::new("Node 2");
+        node1.id = tree.add_node(node1);
+        node2.id = tree.add_node(node2);
+        let link1 = Link::new((node1.id, node2.id), 5);
+        let link2 = Link::new((node1.id, node1.id), 5);
         tree.add_link(link1);
         tree.add_link(link2);
-        let result = find_path_to_element(tree, 1, 2).unwrap();
-        println!("{:?}", result);
+        let result = find_path_to_element(tree, node1.id, node2.id).unwrap();
         assert_eq!(result.links[1], link1);
         assert_eq!(result.cost, 5);
     }
@@ -424,37 +411,36 @@ mod discover_test {
     #[test]
     fn discover_elements_with_circular_trees() {
         let mut tree = Tree::new();
-        let node1 = Node::new(1, "Node 1");
-        let node2 = Node::new(2, "Node 2");
-        let node3 = Node::new(3, "Node 3");
-        let node4 = Node::new(4, "Node 4");
-        let node5 = Node::new(5, "Node 5");
-        let node6 = Node::new(6, "Node 6");
-        let node7 = Node::new(7, "Node 7");
-        tree.add_node(node1);
-        tree.add_node(node2);
-        tree.add_node(node3);
-        tree.add_node(node4);
-        tree.add_node(node5);
-        tree.add_node(node6);
-        tree.add_node(node7);
-        let link1 = Link::new((1, 3), 1);
-        let link2 = Link::new((1, 2), 1);
-        let link3 = Link::new((2, 4), 2);
-        let link4 = Link::new((3, 5), 1);
-        let link5 = Link::new((5, 1), 1);
-        let link6 = Link::new((4, 7), 1);
+        let mut node1 = Node::new("Node 1");
+        let mut node2 = Node::new("Node 2");
+        let mut node3 = Node::new("Node 3");
+        let mut node4 = Node::new("Node 4");
+        let mut node5 = Node::new("Node 5");
+        let mut node6 = Node::new("Node 6");
+        let mut node7 = Node::new("Node 7");
+        node1.id = tree.add_node(node1);
+        node2.id = tree.add_node(node2);
+        node3.id = tree.add_node(node3);
+        node4.id = tree.add_node(node4);
+        node5.id = tree.add_node(node5);
+        node6.id = tree.add_node(node6);
+        node7.id = tree.add_node(node7);
+        let link1 = Link::new((node1.id, node3.id), 1);
+        let link2 = Link::new((node1.id, node2.id), 1);
+        let link3 = Link::new((node2.id, node4.id), 2);
+        let link4 = Link::new((node3.id, node5.id), 1);
+        let link5 = Link::new((node5.id, node1.id), 1);
+        let link6 = Link::new((node4.id, node7.id), 1);
         tree.add_link(link1);
         tree.add_link(link2);
         tree.add_link(link3);
         tree.add_link(link4);
         tree.add_link(link5);
         tree.add_link(link6);
-        let result = find_path_to_element(tree, 1, 7).unwrap();
-        println!("{:?}", result);
+        let result = find_path_to_element(tree, node1.id, node7.id).unwrap();
         assert_eq!(result.cost, 4);
-        assert_eq!(result.links[1], Link::new((1, 2), 1));
-        assert_eq!(result.links[2], Link::new((2, 4), 2));
-        assert_eq!(result.links[3], Link::new((4, 7), 1));
+        assert_eq!(result.links[1], Link::new((node1.id, node2.id), 1));
+        assert_eq!(result.links[2], Link::new((node2.id, node4.id), 2));
+        assert_eq!(result.links[3], Link::new((node4.id, node7.id), 1));
     }
 }
