@@ -220,7 +220,13 @@ pub fn find_path_to_element(
     vector.push(Link::new((start_node_id, start_node_id), 0));
     queue.push_front((start_node_id, 1, vector));
 
-    tree.get_node(start_node_id).unwrap().is_discovered = true;
+    let mut start_node = match tree.get_node(start_node_id) {
+        Some(node) => node,
+        None => {
+            return None;
+        }
+    };
+    start_node.is_discovered = true;
 
     while !queue.is_empty() {
         // The while loop guarantees that there is something to pop, so unwrapping is safe
@@ -307,6 +313,39 @@ mod node_test {
 #[cfg(test)]
 mod discover_test {
     use super::*;
+
+    #[test]
+    fn test_discover_no_start_element() {
+        let mut tree = Tree::new();
+        let node1 = Node::new(1, "Node 1");
+        tree.add_node(node1);
+        assert_eq!(find_path_to_element(tree, 2, 1).is_none(), true);
+    }
+
+    #[test]
+    fn test_discover_no_target_element() {
+        let mut tree = Tree::new();
+        let node1 = Node::new(1, "Node 1");
+        tree.add_node(node1);
+        assert_eq!(find_path_to_element(tree, 1, 2).is_none(), true);
+    }
+
+    #[test]
+    fn test_discover_no_start_and_target_element() {
+        let tree = Tree::new();
+        assert_eq!(find_path_to_element(tree, 1, 2).is_none(), true);
+    }
+
+    #[test]
+    fn test_discover_no_link() {
+        let mut tree = Tree::new();
+        let node1 = Node::new(1, "Node 1");
+        let node2 = Node::new(1, "Node 1");
+        tree.add_node(node1);
+        tree.add_node(node2);
+        tree.add_link(Link::new((1, 3), 1));
+        assert_eq!(find_path_to_element(tree, 1, 2).is_none(), true);
+    }
 
     #[test]
     fn test_discover_element_to_self() {
