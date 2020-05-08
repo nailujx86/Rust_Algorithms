@@ -1,4 +1,4 @@
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Node {
     id: isize,
     name: &'static str,
@@ -70,7 +70,7 @@ impl Tree {
         found_link
     }
 
-    pub fn find_links(&self, node_id: isize) -> Vec<&Link> {
+    pub fn find_links_from_node(&self, node_id: isize) -> Vec<&Link> {
         let link_list = &self.link_list;
         link_list
             .iter()
@@ -174,7 +174,7 @@ pub fn find_path_to_element(
             return Some(s);
         } else {
             let mytree = tree.clone();
-            let links = mytree.find_links(current_node);
+            let links = mytree.find_links_from_node(current_node);
             for link in links {
                 //ignore circular links (from object to itself)
                 if link.members.0 != link.members.1 {
@@ -222,6 +222,56 @@ mod tree_tests {
         let unwrapped_link = link.unwrap();
         assert_eq!(unwrapped_link.cost, 5);
         assert_eq!(tree.find_link(7, 9).is_none(), true);
+    }
+
+    #[test]
+    fn find_links_from_node(){
+        let mut tree = Tree::new();
+        let node1 = Node::new(1, "Node 1");
+        let node2 = Node::new(2, "Node 2");
+        tree.add_node(node1);
+        tree.add_node(node2);
+        let link1 = Link::new((1,1),1);
+        let link2 = Link::new((1,2),1);
+        let link3 = Link::new((1,3),1);
+        let link4 = Link::new((2,2),1);
+        tree.add_link(link1);
+        tree.add_link(link2);
+        tree.add_link(link3);
+        tree.add_link(link4);
+        let links = tree.find_links_from_node(1);
+        assert_eq!(links.len(), 3);
+        assert!(links.contains(&&link1));
+        assert!(links.contains(&&link2));
+        assert!(links.contains(&&link3));
+    }
+
+    #[test]
+    fn add_node(){
+        let mut tree = Tree::new();
+        let node = Node::new(1,"Node1");
+        tree.add_node(node);
+        assert!(tree.node_list.contains(&&node));
+    }
+
+    #[test]
+    fn add_node_already_existing() {
+        let mut tree = Tree::new();
+        let node = Node::new(1,"Node1");
+        tree.add_node(node);
+        tree.add_node(node);
+        assert_eq!(tree.node_list.len(), 1);
+    }
+
+    #[test]
+    fn get_node(){
+        let mut tree = Tree::new();
+        let node = Node::new(1, "Node1");
+        tree.add_node(node);
+        let node_retrieved = tree.get_node(1).unwrap();
+        assert_eq!(node_retrieved, &node);
+        let node_retrieved2 = tree.get_node(2);
+        assert!(node_retrieved2.is_none());
     }
 }
 
