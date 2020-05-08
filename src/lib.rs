@@ -1,4 +1,4 @@
-pub mod bfstest;
+pub mod bfs;
 pub mod dfs;
 pub mod spanningtree;
 
