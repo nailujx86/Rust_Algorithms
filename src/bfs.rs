@@ -1,5 +1,3 @@
-use rand::Rng;
-
 #[derive(Copy, Clone, Debug)]
 pub struct Node {
     id: isize,
@@ -41,26 +39,6 @@ impl Node {
             root_id: id,
             is_discovered: false,
         }
-    }
-
-    pub fn receive_suggestion(
-        &mut self,
-        suggested_id: isize,
-        source_id: isize,
-        root_cost: usize,
-    ) -> bool {
-        self.msg_count += 1;
-        if suggested_id < self.root_id {
-            self.root_cost = root_cost;
-            self.next_hop = Some(source_id);
-            self.root_id = suggested_id;
-            return true;
-        } else if suggested_id == self.root_id && root_cost < self.root_cost {
-            self.root_cost = root_cost;
-            self.next_hop = Some(source_id);
-            return true;
-        }
-        false
     }
 }
 
@@ -136,54 +114,6 @@ impl Tree {
         found_node
     }
 
-    pub fn run_calc(&mut self, node_id: isize, recursive: bool) {
-        let root_cost: usize;
-        let root_id: isize;
-        {
-            let node: &Node = &self.node_list.iter().find(|n| n.id == node_id).unwrap();
-            root_cost = node.root_cost;
-            root_id = node.root_id;
-        }
-        let mut recursive_vec: Vec<isize> = Vec::new();
-        for link in &self.link_list {
-            if let Some(index) = self.node_list.iter().position(|&node_item| {
-                node_item.id
-                    == (if node_id == link.members.0 {
-                        link.members.1
-                    } else if node_id == link.members.1 {
-                        link.members.0
-                    } else {
-                        -1
-                    })
-            }) {
-                let node_item = self.node_list.get_mut(index);
-                if let Some(other_node) = node_item {
-                    let accept =
-                        other_node.receive_suggestion(root_id, node_id, root_cost + link.cost);
-                    if accept && recursive {
-                        recursive_vec.push(other_node.id);
-                    }
-                }
-            }
-        }
-        for id in recursive_vec {
-            self.run_calc(id, recursive);
-        }
-    }
-
-    pub fn simulate(&mut self, min_iterations: usize, min_hops: usize, recursive: bool) {
-        while {
-            for _i in 0..min_iterations {
-                let randi = rand::thread_rng().gen_range(0, self.node_list.len());
-                let nodeid: isize = self.node_list[randi].id;
-                self.run_calc(nodeid, recursive);
-            }
-            self.node_list
-                .iter()
-                .any(|&node| node.msg_count <= min_hops)
-                && min_hops != 0
-        } {}
-    }
 }
 
 impl SearchResult {
