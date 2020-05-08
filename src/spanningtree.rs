@@ -15,6 +15,7 @@ pub struct Link {
     cost: usize
 }
 
+#[derive(Default)]
 pub struct Tree {
     node_list: Vec<Node>,
     root_id: Option<isize>,
@@ -47,7 +48,7 @@ impl Node {
             self.next_hop = Some(source_id);
             return true;
         }
-        return false;
+        false
     }
 }
 
@@ -84,7 +85,7 @@ impl Tree {
     /// Returns all links that have a connection to a node
     pub fn find_links(&self, node_id: isize) -> Vec<&Link> {
         let link_list = &self.link_list;
-        link_list.into_iter().filter(|link| link.members.0 == node_id || link.members.1 == node_id).collect()
+        link_list.iter().filter(|link| link.members.0 == node_id || link.members.1 == node_id).collect()
     }
 
     /// Adds a link to the tree
@@ -144,7 +145,7 @@ impl Tree {
         for id in recursive_vec {
             self.run_calc(id, recursive);
         }
-        return true;
+        true
     }
 
     /// Simulates a tree until for x iterations or even longer if there was a min_hops specified and if there are nodes in the tree that haven't been touched by the simulation enough
