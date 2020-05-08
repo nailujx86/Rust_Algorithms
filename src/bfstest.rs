@@ -202,47 +202,40 @@ pub fn find_path_to_element(
 ) -> Option<SearchResult> {
     use std::collections::VecDeque;
 
-    let mut links = SearchResult::new();
-
     if start_node_id == search_node_id {
-        links.cost = 0;
-        links.links.push(Link::new((start_node_id, search_node_id), 0));
+        let mut s = SearchResult::new();
+        s.cost = 0;
+        let link = Link::new((start_node_id, search_node_id), 0);
+        let mut vector = Vec::new();
+        vector.push(link);
+        s.links = vector;
+        return Some(s);
     }
 
     // the first int is the nodes id, the second the depth in the tree, the third the link that lead to this node
-    let mut queue = VecDeque::<(isize, usize, Link)>::new();
-    let mut current_depth: usize = 1;
+    let mut queue = VecDeque::<(isize, usize, Vec<Link>)>::new();
 
     // the first link leads from the first element to itself with no cost. It is just there to provide any link
-    queue.push_front((
-        start_node_id,
-        1,
-        Link::new((start_node_id, start_node_id), 0),
-    ));
+    let mut vector = Vec::new();
+    vector.push(Link::new((start_node_id, start_node_id), 0));
+    queue.push_front((start_node_id, 1, vector));
+
+    tree.get_node(start_node_id).unwrap().is_discovered = true;
 
     while !queue.is_empty() {
         // The while loop guarantees that there is something to pop, so unwrapping is safe
         let current_queue_element = queue.pop_front().unwrap();
         let current_node = current_queue_element.0;
 
-        // If we had a sideways motion, remove the last link from the list, as we moved on to another.
-        // Else increment the current depth, as we moved deeper into the tree.
-        if !links.links.is_empty() && current_depth == current_queue_element.1 {
-            // unwrapping is safe because of the !.is_empty() assertion
-            let lastlink = links.links.pop().unwrap();
-            links.cost -= lastlink.cost;
-        } else {
-            current_depth += 1;
-        }
-
-        //add the link and its cost to the current item to the list of links
-        links.links.push(current_queue_element.2);
-        links.cost += current_queue_element.2.cost;
-
-        println!("Current element: {}", current_queue_element.1);
-
         if current_node == search_node_id {
-            return Some(links);
+            let mut cost = 0;
+            for link in current_queue_element.2.iter() {
+                cost += link.cost;
+            }
+            let mut s = SearchResult::new();
+            s.links = current_queue_element.2;
+            s.cost = cost;
+            return Some(s);
         } else {
             let mytree = tree.clone();
             let links = mytree.find_links(current_node);
@@ -256,7 +249,9 @@ pub fn find_path_to_element(
                     };
                     if let Some(node) = tree.get_node(found_node) {
                         if !node.is_discovered {
-                            queue.push_back((found_node, current_queue_element.1 + 1, *link));
+                            let mut new_vector = current_queue_element.2.clone();
+                            new_vector.push(*link);
+                            queue.push_back((found_node, current_queue_element.1 + 1, new_vector));
                             node.is_discovered = true;
                         }
                     }
@@ -316,8 +311,8 @@ mod discover_test {
     #[test]
     fn test_discover_element_to_self() {
         let tree = Tree::new();
-        let result = find_path_to_element(tree, 1,1).unwrap();
-        assert_eq!(result.links[0], Link::new((1,1),0));
+        let result = find_path_to_element(tree, 1, 1).unwrap();
+        assert_eq!(result.links[0], Link::new((1, 1), 0));
         assert_eq!(result.cost, 0);
     }
 
@@ -332,7 +327,9 @@ mod discover_test {
         tree.add_link(link1);
         let result = find_path_to_element(tree, 1, 2).unwrap();
         println!("{:?}", result);
-        assert_eq!(result.links[0], link1);
+        let link0 = Link::new((1, 1), 0);
+        assert_eq!(result.links[0], link0);
+        assert_eq!(result.links[1], link1);
         assert_eq!(result.cost, 5);
     }
 
@@ -367,9 +364,9 @@ mod discover_test {
         tree.add_link(link6);
         let result = find_path_to_element(tree, 1, 7).unwrap();
         assert_eq!(result.cost, 4);
-        assert_eq!(result.links[0], Link::new((1, 2), 1));
-        assert_eq!(result.links[1], Link::new((2, 4), 2));
-        assert_eq!(result.links[2], Link::new((4, 7), 1));
+        assert_eq!(result.links[1], Link::new((1, 2), 1));
+        assert_eq!(result.links[2], Link::new((2, 4), 2));
+        assert_eq!(result.links[3], Link::new((4, 7), 1));
     }
 
     #[test]
@@ -385,7 +382,7 @@ mod discover_test {
         tree.add_link(link2);
         let result = find_path_to_element(tree, 1, 2).unwrap();
         assert_eq!(result.cost, 1);
-        assert_eq!(result.links[0], Link::new((1, 2), 1));
+        assert_eq!(result.links[1], Link::new((1, 2), 1));
     }
 
     #[test]
@@ -401,7 +398,7 @@ mod discover_test {
         tree.add_link(link2);
         let result = find_path_to_element(tree, 1, 2).unwrap();
         println!("{:?}", result);
-        assert_eq!(result.links[0], link1);
+        assert_eq!(result.links[1], link1);
         assert_eq!(result.cost, 5);
     }
 
@@ -437,9 +434,8 @@ mod discover_test {
         let result = find_path_to_element(tree, 1, 7).unwrap();
         println!("{:?}", result);
         assert_eq!(result.cost, 4);
-        assert_eq!(result.links[0], Link::new((1, 2), 1));
-        assert_eq!(result.links[1], Link::new((2, 4), 2));
-        assert_eq!(result.links[2], Link::new((4, 7), 1));
+        assert_eq!(result.links[1], Link::new((1, 2), 1));
+        assert_eq!(result.links[2], Link::new((2, 4), 2));
+        assert_eq!(result.links[3], Link::new((4, 7), 1));
     }
-
 }
