@@ -84,10 +84,10 @@ impl Tree {
         }
     }
 
-    pub fn add_node(&mut self, mut node: Node)-> isize{
+    pub fn add_node(&mut self, mut node: Node) -> isize {
         for node1 in &self.node_list {
             if node1.name == node.name {
-                return node1.id
+                return node1.id;
             }
         }
         let len = self.node_list.len();
@@ -100,7 +100,6 @@ impl Tree {
         let usizeindex: usize = node_id.try_into().unwrap();
         self.node_list.get_mut(usizeindex)
     }
-
 }
 
 impl SearchResult {
@@ -109,6 +108,16 @@ impl SearchResult {
             links: Vec::<Link>::new(),
             cost: 0,
         }
+    }
+
+    pub fn links(mut self, links: Vec<Link>) -> Self {
+        self.links = links;
+        self
+    }
+
+    pub fn cost(mut self, cost: usize) -> Self {
+        self.cost = cost;
+        self
     }
 }
 
@@ -120,13 +129,11 @@ pub fn find_path_to_element(
     use std::collections::VecDeque;
 
     if start_node_id == search_node_id {
-        let mut s = SearchResult::new();
-        s.cost = 0;
-        let link = Link::new((start_node_id, search_node_id), 0);
-        let mut vector = Vec::new();
-        vector.push(link);
-        s.links = vector;
-        return Some(s);
+        return Some(
+            SearchResult::new()
+                .cost(0)
+                .links(vec![Link::new((start_node_id, search_node_id), 0)]),
+        );
     }
 
     // the first int is the nodes id, the second the depth in the tree, the third the link that lead to this node
@@ -155,10 +162,11 @@ pub fn find_path_to_element(
             for link in current_queue_element.2.iter() {
                 cost += link.cost;
             }
-            let mut s = SearchResult::new();
-            s.links = current_queue_element.2;
-            s.cost = cost;
-            return Some(s);
+            return Some(
+                SearchResult::new()
+                    .cost(cost)
+                    .links(current_queue_element.2),
+            );
         } else {
             let mytree = tree.clone();
             let links = mytree.find_links_from_node(current_node);
@@ -187,6 +195,25 @@ pub fn find_path_to_element(
 }
 
 #[cfg(test)]
+mod search_result_tests {
+    use super::Link;
+    use super::SearchResult;
+
+    #[test]
+    fn new() {
+        let result = SearchResult::new();
+        assert_eq!(result.cost, 0);
+        assert_eq!(result.links.len(), 0);
+
+        let testlink = Link::new((1, 1), 2);
+        let buildresult = SearchResult::new().cost(2).links(vec![testlink]);
+
+        assert_eq!(buildresult.cost, 2);
+        assert_eq!(buildresult.links, vec!(testlink));
+    }
+}
+
+#[cfg(test)]
 mod tree_tests {
     use super::*;
 
@@ -212,16 +239,16 @@ mod tree_tests {
     }
 
     #[test]
-    fn find_links_from_node(){
+    fn find_links_from_node() {
         let mut tree = Tree::new();
         let node1 = Node::new("Node 1");
         let node2 = Node::new("Node 2");
         tree.add_node(node1);
         tree.add_node(node2);
-        let link1 = Link::new((1,1),1);
-        let link2 = Link::new((1,2),1);
-        let link3 = Link::new((1,3),1);
-        let link4 = Link::new((2,2),1);
+        let link1 = Link::new((1, 1), 1);
+        let link2 = Link::new((1, 2), 1);
+        let link3 = Link::new((1, 3), 1);
+        let link4 = Link::new((2, 2), 1);
         tree.add_link(link1);
         tree.add_link(link2);
         tree.add_link(link3);
@@ -234,7 +261,7 @@ mod tree_tests {
     }
 
     #[test]
-    fn add_node(){
+    fn add_node() {
         let mut tree = Tree::new();
         let node = Node::new("Node1");
         tree.add_node(node);
@@ -252,11 +279,11 @@ mod tree_tests {
     }
 
     #[test]
-    fn get_node(){
+    fn get_node() {
         let mut tree = Tree::new();
         let node = Node::new("Node1");
         tree.add_node(node);
-        println!("{}",node.id);
+        println!("{}", node.id);
         let node_retrieved = tree.get_node(0).unwrap();
         assert_eq!(node_retrieved.name, node.name);
         let node_retrieved2 = tree.get_node(2);
@@ -351,12 +378,12 @@ mod discover_test {
         let mut node6 = Node::new("Node 6");
         let mut node7 = Node::new("Node 7");
         node1.id = tree.add_node(node1);
-        node2.id =tree.add_node(node2);
-        node3.id =tree.add_node(node3);
-        node4.id =tree.add_node(node4);
-        node5.id =tree.add_node(node5);
-        node6.id =tree.add_node(node6);
-        node7.id =tree.add_node(node7);
+        node2.id = tree.add_node(node2);
+        node3.id = tree.add_node(node3);
+        node4.id = tree.add_node(node4);
+        node5.id = tree.add_node(node5);
+        node6.id = tree.add_node(node6);
+        node7.id = tree.add_node(node7);
         let link1 = Link::new((node1.id, node3.id), 1);
         let link2 = Link::new((node1.id, node2.id), 1);
         let link3 = Link::new((node2.id, node4.id), 2);
