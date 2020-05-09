@@ -52,8 +52,8 @@ fn search_node_recursive(
 /// This path consists of a Vec of Links.
 /// # Example:
 /// ```rust
-/// use testrepo::graph::*;
-/// use testrepo::dfs::*;
+/// use rust_algorithms::graph::*;
+/// use rust_algorithms::dfs::*;
 /// let mut tree = Tree::new();
 /// let mut node1 = Node::new("Node 1");
 /// let mut node2 = Node::new("Node 2");

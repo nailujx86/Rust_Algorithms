@@ -201,7 +201,7 @@ mod tree_tests {
         let mut tree = Tree::new();
         tree.add_node(Node::new(4, "E"));
         tree.add_node(Node::new(4, "E"));
-        assert_eq!(tree.node_list.len, 1);
+        assert_eq!(tree.node_list.len(), 1);
     }
 
     #[test]
