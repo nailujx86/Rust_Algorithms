@@ -27,7 +27,7 @@ use crate::graph::*;
 /// assert_eq!(result.cost, 5);
 /// ```
 pub fn dfs_search_node(
-    graph: Graph,
+    mut graph: Graph,
     start_node_id: isize,
     search_node_id: isize,
 ) -> Option<SearchResult> {
@@ -39,7 +39,7 @@ pub fn dfs_search_node(
         );
     }
 
-    let result = search_node_recursive(graph, start_node_id, search_node_id, vec!(Link::new((0,0),0)));
+    let result = search_node_recursive(&mut graph, start_node_id, search_node_id, vec!(Link::new((0,0),0)));
     
     match result {
         Some(mut res) => {
@@ -57,7 +57,7 @@ pub fn dfs_search_node(
 }
 
 fn search_node_recursive(
-    mut graph: Graph,
+    graph: &mut Graph,
     start_node_id: isize,
     search_node_id: isize,
     link_chain: Vec<Link>,
@@ -92,7 +92,7 @@ fn search_node_recursive(
         let mut new_vector = link_chain.clone();
         new_vector.push(*stack_element.0);
         if let Some(result) =
-            search_node_recursive(graph.clone(), stack_element.1, search_node_id, new_vector)
+            search_node_recursive(graph, stack_element.1, search_node_id, new_vector)
         {
             return Some(result);
         }
