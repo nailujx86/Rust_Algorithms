@@ -229,7 +229,7 @@ impl SearchResult {
     ///
     /// The result contains a list of links, which summarize the path from start to finish.
     /// Those links are ordered, but their individual orientation might be scrambled.
-    /// An Example would be a link from node 1 to node 3, consisting of (1, 2) , (3, 2) instead of (1, 2) , (2 , 3).assert_eq!
+    /// An Example would be a link from node 1 to node 3, consisting of (1, 2) , (3, 2) instead of (1, 2) , (2 , 3)
     ///
     /// 
     /// This struct has a builder pattern, so it may be initialized as follows:
