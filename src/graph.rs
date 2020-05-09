@@ -1,7 +1,7 @@
 use std::convert::TryInto;
 
 /// A node which can be part of a graph.
-/// Use a tree to work with nodes.
+/// Use a graph to work with nodes.
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Node {
     pub id: isize,
@@ -17,9 +17,9 @@ pub struct Link {
     pub cost: usize,
 }
 
-/// A tree (a graph), consisting of nodes and links between them.
+/// A graph, consisting of nodes and links between them.
 #[derive(Clone, Debug, Default)]
-pub struct Tree {
+pub struct Graph {
     node_list: Vec<Node>,
     link_list: Vec<Link>,
 }
@@ -68,17 +68,17 @@ impl Link {
     }
 }
 
-impl Tree {
-    /// Creates a new tree, with empty node- and link-list.
+impl Graph {
+    /// Creates a new graph, with empty node- and link-list.
     ///
     /// # Example
     /// ```
-    /// use rust_algorithms::graph::Tree;
+    /// use rust_algorithms::graph::Graph;
     ///
-    /// let tree = Tree::new();
+    /// let graph = Graph::new();
     /// ```
     pub fn new() -> Self {
-        Tree {
+        Graph {
             node_list: Vec::new(),
             link_list: Vec::new(),
         }
@@ -89,18 +89,18 @@ impl Tree {
     /// # Example
     /// ```
     /// use rust_algorithms::graph::Link;
-    /// use rust_algorithms::graph::Tree;
+    /// use rust_algorithms::graph::Graph;
     ///
-    /// let mut tree = Tree::new();
+    /// let mut graph = Graph::new();
     ///
-    /// tree.add_link(Link::new((1, 2), 5));
-    /// tree.add_link(Link::new((2, 5), 8));
+    /// graph.add_link(Link::new((1, 2), 5));
+    /// graph.add_link(Link::new((2, 5), 8));
     ///
-    /// let link = tree.find_link(2, 1).unwrap();
+    /// let link = graph.find_link(2, 1).unwrap();
     ///
     /// assert_eq!(link.cost, 5);
     ///
-    /// assert_eq!(tree.find_link(7, 9).is_none(), true);
+    /// assert_eq!(graph.find_link(7, 9).is_none(), true);
     /// ```
     pub fn find_link(&mut self, a: isize, b: isize) -> Option<&Link> {
         let mut found_link: Option<&Link> = Option::default();
@@ -120,23 +120,23 @@ impl Tree {
     ///
     /// # Example
     /// ```
-    /// use rust_algorithms::graph::Tree;
+    /// use rust_algorithms::graph::Graph;
     /// use rust_algorithms::graph::Link;
     /// use rust_algorithms::graph::Node;
     ///
-    /// let mut tree = Tree::new();
+    /// let mut graph = Graph::new();
     ///
     /// let node1 = Node::new("Node 1");
     /// let node2 = Node::new("Node 2");
-    /// tree.add_node(node1);
-    /// tree.add_node(node2);
+    /// graph.add_node(node1);
+    /// graph.add_node(node2);
     ///
     /// let link1 = Link::new((1, 1), 1);
     /// let link2 = Link::new((2, 2), 1);
-    /// tree.add_link(link1);
-    /// tree.add_link(link2);
+    /// graph.add_link(link1);
+    /// graph.add_link(link2);
     ///
-    /// let links = tree.find_links_from_node(1);
+    /// let links = graph.find_links_from_node(1);
     /// assert_eq!(links.len(), 1);
     /// assert!(links.contains(&&link1));
     /// ```
@@ -148,20 +148,20 @@ impl Tree {
             .collect()
     }
 
-    /// Adds a link to the graph, if it is not a part of the tree yet.
+    /// Adds a link to the graph, if it is not a part of the graph yet.
     ///
-    /// If the link is already a part of the tree, the tree remains unchanged.
+    /// If the link is already a part of the graph, the graph remains unchanged.
     ///
     /// # Example
     /// ```
-    /// use rust_algorithms::graph::Tree;
+    /// use rust_algorithms::graph::Graph;
     /// use rust_algorithms::graph::Link;
     ///
-    /// let mut tree = Tree::new();
+    /// let mut graph = Graph::new();
     /// let link = Link::new((1, 2), 5);
-    /// tree.add_link(link);
+    /// graph.add_link(link);
     ///
-    /// assert_eq!(tree.find_link(link.members.0, link.members.1).unwrap(), &link);
+    /// assert_eq!(graph.find_link(link.members.0, link.members.1).unwrap(), &link);
     /// ```
     pub fn add_link(&mut self, link: Link) {
         if self.find_link(link.members.0, link.members.1).is_none() {
@@ -169,24 +169,24 @@ impl Tree {
         }
     }
 
-    /// Adds a node to the graph, if it is not a part of the tree yet.
+    /// Adds a node to the graph, if it is not a part of the graph yet.
     ///
-    /// This operation returns the nodes ID inside of the tree, as it cannot be known before adding the node to the tree.
+    /// This operation returns the nodes ID inside of the graph, as it cannot be known before adding the node to the graph.
     /// This id can then be used to reference the node later. You can assign it back to the node.
-    /// The nodes ID does NOT automatically change, as it gets cloned into the tree instead of moved.
-    /// If the node is already a part of the tree, the tree remains unchanged.
+    /// The nodes ID does NOT automatically change, as it gets cloned into the graph instead of moved.
+    /// If the node is already a part of the graph, the graph remains unchanged.
     ///
     /// # Example
     /// ```
-    /// use rust_algorithms::graph::Tree;
+    /// use rust_algorithms::graph::Graph;
     /// use rust_algorithms::graph::Node;
     ///
-    /// let mut tree = Tree::new();
+    /// let mut graph = Graph::new();
     ///
     /// let mut node = Node::new("Node1");
-    /// let node_id = tree.add_node(node);
+    /// let node_id = graph.add_node(node);
     ///
-    /// assert_eq!(tree.get_node(node_id).unwrap().name, node.name);
+    /// assert_eq!(graph.get_node(node_id).unwrap().name, node.name);
     /// ```
     pub fn add_node(&mut self, mut node: Node) -> isize {
         for node1 in &self.node_list {
@@ -200,22 +200,22 @@ impl Tree {
         node.id
     }
 
-    /// Retrieves a node from the tree by its id.
-    /// Returns None, if no node with that id is present inside the tree instead of panicing.
+    /// Retrieves a node from the graph by its id.
+    /// Returns None, if no node with that id is present inside the graph instead of panicing.
     ///
     /// # Example:
     /// ```
-    /// use rust_algorithms::graph::Tree;
+    /// use rust_algorithms::graph::Graph;
     /// use rust_algorithms::graph::Node;
     ///
-    /// let mut tree = Tree::new();
+    /// let mut graph = Graph::new();
     /// let node = Node::new("Node1");
-    /// tree.add_node(node);
+    /// graph.add_node(node);
     ///
-    /// let node_retrieved = tree.get_node(0).unwrap();
+    /// let node_retrieved = graph.get_node(0).unwrap();
     /// assert_eq!(node_retrieved.name, node.name);
     ///
-    /// let node_not_present = tree.get_node(2);
+    /// let node_not_present = graph.get_node(2);
     /// assert!(node_not_present.is_none());
     /// ```
     pub fn get_node(&mut self, node_id: isize) -> Option<&mut Node> {
@@ -271,53 +271,53 @@ impl SearchResult {
 }
 
 #[cfg(test)]
-mod tree_tests {
+mod graph_tests {
     use super::*;
 
     #[test]
     fn new() {
-        let tree = Tree::new();
-        assert_eq!(tree.link_list.len(), 0);
-        assert_eq!(tree.node_list.len(), 0);
+        let graph = Graph::new();
+        assert_eq!(graph.link_list.len(), 0);
+        assert_eq!(graph.node_list.len(), 0);
     }
 
     #[test]
     fn add_link() {
-        let mut tree = Tree::new();
-        tree.add_link(Link::new((1, 2), 5));
-        tree.add_link(Link::new((2, 5), 8));
-        assert_eq!(tree.link_list.len(), 2);
-        assert_eq!(tree.link_list[0].members.1, 2);
+        let mut graph = Graph::new();
+        graph.add_link(Link::new((1, 2), 5));
+        graph.add_link(Link::new((2, 5), 8));
+        assert_eq!(graph.link_list.len(), 2);
+        assert_eq!(graph.link_list[0].members.1, 2);
     }
 
     #[test]
     fn find_link() {
-        let mut tree = Tree::new();
-        tree.add_link(Link::new((1, 2), 5));
-        tree.add_link(Link::new((2, 5), 8));
-        let link = tree.find_link(2, 1);
+        let mut graph = Graph::new();
+        graph.add_link(Link::new((1, 2), 5));
+        graph.add_link(Link::new((2, 5), 8));
+        let link = graph.find_link(2, 1);
         assert_eq!(link.is_some(), true);
         let unwrapped_link = link.unwrap();
         assert_eq!(unwrapped_link.cost, 5);
-        assert_eq!(tree.find_link(7, 9).is_none(), true);
+        assert_eq!(graph.find_link(7, 9).is_none(), true);
     }
 
     #[test]
     fn find_links_from_node() {
-        let mut tree = Tree::new();
+        let mut graph = Graph::new();
         let node1 = Node::new("Node 1");
         let node2 = Node::new("Node 2");
-        tree.add_node(node1);
-        tree.add_node(node2);
+        graph.add_node(node1);
+        graph.add_node(node2);
         let link1 = Link::new((1, 1), 1);
         let link2 = Link::new((1, 2), 1);
         let link3 = Link::new((1, 3), 1);
         let link4 = Link::new((2, 2), 1);
-        tree.add_link(link1);
-        tree.add_link(link2);
-        tree.add_link(link3);
-        tree.add_link(link4);
-        let links = tree.find_links_from_node(1);
+        graph.add_link(link1);
+        graph.add_link(link2);
+        graph.add_link(link3);
+        graph.add_link(link4);
+        let links = graph.find_links_from_node(1);
         assert_eq!(links.len(), 3);
         assert!(links.contains(&&link1));
         assert!(links.contains(&&link2));
@@ -326,30 +326,30 @@ mod tree_tests {
 
     #[test]
     fn add_node() {
-        let mut tree = Tree::new();
+        let mut graph = Graph::new();
         let node = Node::new("Node1");
-        tree.add_node(node);
-        assert_eq!(tree.node_list[0].id, 0);
-        assert_eq!(tree.node_list[0].name, node.name);
+        graph.add_node(node);
+        assert_eq!(graph.node_list[0].id, 0);
+        assert_eq!(graph.node_list[0].name, node.name);
     }
 
     #[test]
     fn add_already_existing_node() {
-        let mut tree = Tree::new();
+        let mut graph = Graph::new();
         let node = Node::new("Node1");
-        let id1 = tree.add_node(node);
-        let id2 = tree.add_node(node);
+        let id1 = graph.add_node(node);
+        let id2 = graph.add_node(node);
         assert_eq!(id1, id2);
     }
 
     #[test]
     fn get_node() {
-        let mut tree = Tree::new();
+        let mut graph = Graph::new();
         let node = Node::new("Node1");
-        tree.add_node(node);
-        let node_retrieved = tree.get_node(0).unwrap();
+        graph.add_node(node);
+        let node_retrieved = graph.get_node(0).unwrap();
         assert_eq!(node_retrieved.name, node.name);
-        let node_retrieved2 = tree.get_node(2);
+        let node_retrieved2 = graph.get_node(2);
         assert!(node_retrieved2.is_none());
     }
 }
