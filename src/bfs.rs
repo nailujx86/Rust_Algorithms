@@ -43,12 +43,12 @@ pub fn bfs_search_node(
     }
 
     // the first int is the nodes id, the second the depth in the graph, the third the link that lead to this node
-    let mut queue = VecDeque::<(isize, usize, Vec<Link>)>::new();
+    let mut queue = VecDeque::<(isize, Vec<Link>)>::new();
 
     // the first link leads from the first element to itself with no cost. It is just there to provide any link
     let mut vector = Vec::new();
     vector.push(Link::new((start_node_id, start_node_id), 0));
-    queue.push_front((start_node_id, 1, vector));
+    queue.push_front((start_node_id, vector));
 
     let mut start_node = match graph.get_node(start_node_id) {
         Some(node) => node,
@@ -65,13 +65,13 @@ pub fn bfs_search_node(
 
         if current_node == search_node_id {
             let mut cost = 0;
-            for link in current_queue_element.2.iter() {
+            for link in current_queue_element.1.iter() {
                 cost += link.cost;
             }
             return Some(
                 SearchResult::new()
                     .cost(cost)
-                    .links(current_queue_element.2),
+                    .links(current_queue_element.1),
             );
         } else {
             let mygraph = graph.clone();
@@ -86,9 +86,9 @@ pub fn bfs_search_node(
                     };
                     if let Some(node) = graph.get_node(found_node) {
                         if !node.is_discovered {
-                            let mut new_vector = current_queue_element.2.clone();
+                            let mut new_vector = current_queue_element.1.clone();
                             new_vector.push(*link);
-                            queue.push_back((found_node, current_queue_element.1 + 1, new_vector));
+                            queue.push_back((found_node, new_vector));
                             node.is_discovered = true;
                         }
                     }
