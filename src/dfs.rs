@@ -1,5 +1,61 @@
 use crate::graph::*;
 
+/// A function to search for the path to a node using the [Depth-first search](https://en.wikipedia.org/wiki/Depth-first_search) method.
+/// 
+/// This function takes two node ids, for the start and target node, and computes a path between them.
+/// This path consists of a Vec of Links.
+/// # Example:
+/// ```rust
+/// use rust_algorithms::graph::*;
+/// use rust_algorithms::dfs::*;
+/// 
+/// let mut tree = Tree::new();
+/// 
+/// let mut node1 = Node::new("Node 1");
+/// let mut node2 = Node::new("Node 2");
+/// node1.id = tree.add_node(node1);
+/// node2.id = tree.add_node(node2);
+/// 
+/// let link1 = Link::new((node1.id, node2.id), 5);
+/// tree.add_link(link1);
+/// 
+/// let result = dfs_search_node(tree, node1.id, node2.id).unwrap();
+/// let link0 = Link::new((node1.id, node1.id), 0);
+/// 
+/// assert_eq!(result.links[0], link0);
+/// assert_eq!(result.links[1], link1);
+/// assert_eq!(result.cost, 5);
+/// ```
+pub fn dfs_search_node(
+    tree: Tree,
+    start_node_id: isize,
+    search_node_id: isize,
+) -> Option<SearchResult> {
+    if start_node_id == search_node_id {
+        return Some(
+            SearchResult::new()
+                .links(vec![Link::new((start_node_id, search_node_id), 0)])
+                .cost(0),
+        );
+    }
+
+    let result = search_node_recursive(tree, start_node_id, search_node_id, vec!(Link::new((0,0),0)));
+    
+    match result {
+        Some(mut res) => {
+            let mut cost: usize = 0;
+            for link in &res.links {
+                cost += link.cost;
+            }
+            res.cost = cost;
+            Some(res)
+        },
+        None => {
+            None
+        }
+    }
+}
+
 fn search_node_recursive(
     mut tree: Tree,
     start_node_id: isize,
@@ -46,77 +102,6 @@ fn search_node_recursive(
     None
 }
 
-/// A function to search for the path to a node.
-/// 
-/// This function takes two node ids, for the start and target node, and computes a path between them.
-/// This path consists of a Vec of Links.
-/// # Example:
-/// ```rust
-/// use rust_algorithms::graph::*;
-/// use rust_algorithms::dfs::*;
-/// let mut tree = Tree::new();
-/// let mut node1 = Node::new("Node 1");
-/// let mut node2 = Node::new("Node 2");
-/// node1.id = tree.add_node(node1);
-/// node2.id = tree.add_node(node2);
-/// let link1 = Link::new((node1.id, node2.id), 5);
-/// tree.add_link(link1);
-/// let result = search_node(tree, node1.id, node2.id).unwrap();
-/// let link0 = Link::new((node1.id, node1.id), 0);
-/// assert_eq!(result.links[0], link0);
-/// assert_eq!(result.links[1], link1);
-/// assert_eq!(result.cost, 5);
-/// ```
-pub fn search_node(
-    tree: Tree,
-    start_node_id: isize,
-    search_node_id: isize,
-) -> Option<SearchResult> {
-    if start_node_id == search_node_id {
-        return Some(
-            SearchResult::new()
-                .links(vec![Link::new((start_node_id, search_node_id), 0)])
-                .cost(0),
-        );
-    }
-
-    let result = search_node_recursive(tree, start_node_id, search_node_id, vec!(Link::new((0,0),0)));
-    
-    match result {
-        Some(mut res) => {
-            let mut cost: usize = 0;
-            for link in &res.links {
-                cost += link.cost;
-            }
-            res.cost = cost;
-            Some(res)
-        },
-        None => {
-            None
-        }
-    }
-}
-
-#[cfg(test)]
-mod search_result_tests {
-    use super::Link;
-    use super::SearchResult;
-
-    #[test]
-    fn new() {
-        let result = SearchResult::new();
-        assert_eq!(result.cost, 0);
-        assert_eq!(result.links.len(), 0);
-
-        let testlink = Link::new((1, 1), 2);
-        let buildresult = SearchResult::new().cost(2).links(vec![testlink]);
-
-        assert_eq!(buildresult.cost, 2);
-        assert_eq!(buildresult.links, vec!(testlink));
-    }
-}
-
-
 #[cfg(test)]
 mod discover_test {
     use super::*;
@@ -126,7 +111,7 @@ mod discover_test {
         let mut tree = Tree::new();
         let node1 = Node::new("Node 1");
         tree.add_node(node1);
-        assert_eq!(search_node(tree, 2, 1).is_none(), true);
+        assert_eq!(dfs_search_node(tree, 2, 1).is_none(), true);
     }
 
     #[test]
@@ -134,13 +119,13 @@ mod discover_test {
         let mut tree = Tree::new();
         let node1 = Node::new("Node 1");
         tree.add_node(node1);
-        assert_eq!(search_node(tree, 1, 2).is_none(), true);
+        assert_eq!(dfs_search_node(tree, 1, 2).is_none(), true);
     }
 
     #[test]
     fn test_discover_no_start_and_target_element() {
         let tree = Tree::new();
-        assert_eq!(search_node(tree, 1, 2).is_none(), true);
+        assert_eq!(dfs_search_node(tree, 1, 2).is_none(), true);
     }
 
     #[test]
@@ -151,13 +136,13 @@ mod discover_test {
         tree.add_node(node1);
         tree.add_node(node2);
         tree.add_link(Link::new((1, 3), 1));
-        assert_eq!(search_node(tree, 1, 2).is_none(), true);
+        assert_eq!(dfs_search_node(tree, 1, 2).is_none(), true);
     }
 
     #[test]
     fn test_discover_element_to_self() {
         let tree = Tree::new();
-        let result = search_node(tree, 1, 1).unwrap();
+        let result = dfs_search_node(tree, 1, 1).unwrap();
         assert_eq!(result.links[0], Link::new((1, 1), 0));
         assert_eq!(result.cost, 0);
     }
@@ -171,7 +156,7 @@ mod discover_test {
         node2.id = tree.add_node(node2);
         let link1 = Link::new((node1.id, node2.id), 5);
         tree.add_link(link1);
-        let result = search_node(tree, node1.id, node2.id).unwrap();
+        let result = dfs_search_node(tree, node1.id, node2.id).unwrap();
         let link0 = Link::new((node1.id, node1.id), 0);
         assert_eq!(result.links[0], link0);
         assert_eq!(result.links[1], link1);
@@ -207,7 +192,7 @@ mod discover_test {
         tree.add_link(link4);
         tree.add_link(link5);
         tree.add_link(link6);
-        let result = search_node(tree, node1.id, node7.id).unwrap();
+        let result = dfs_search_node(tree, node1.id, node7.id).unwrap();
         assert_eq!(result.cost, 4);
         assert_eq!(result.links[1], Link::new((node1.id, node2.id), 1));
         assert_eq!(result.links[2], Link::new((node2.id, node4.id), 2));
@@ -225,7 +210,7 @@ mod discover_test {
         let link2 = Link::new((1, 65999), 1);
         tree.add_link(link1);
         tree.add_link(link2);
-        let result = search_node(tree, node1.id, node2.id).unwrap();
+        let result = dfs_search_node(tree, node1.id, node2.id).unwrap();
         assert_eq!(result.cost, 1);
         assert_eq!(result.links[1], Link::new((node1.id, node2.id), 1));
     }
@@ -241,7 +226,7 @@ mod discover_test {
         let link2 = Link::new((node1.id, node1.id), 5);
         tree.add_link(link1);
         tree.add_link(link2);
-        let result = search_node(tree, node1.id, node2.id).unwrap();
+        let result = dfs_search_node(tree, node1.id, node2.id).unwrap();
         assert_eq!(result.links[1], link1);
         assert_eq!(result.cost, 5);
     }
@@ -275,7 +260,7 @@ mod discover_test {
         tree.add_link(link4);
         tree.add_link(link5);
         tree.add_link(link6);
-        let result = search_node(tree, node1.id, node7.id).unwrap();
+        let result = dfs_search_node(tree, node1.id, node7.id).unwrap();
         assert_eq!(result.cost, 4);
         assert_eq!(result.links[1], Link::new((node1.id, node2.id), 1));
         assert_eq!(result.links[2], Link::new((node2.id, node4.id), 2));
