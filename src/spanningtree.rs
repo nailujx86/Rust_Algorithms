@@ -197,6 +197,14 @@ mod tree_tests {
     }
 
     #[test]
+    fn multiple_nodes_with_same_id() {
+        let mut tree = Tree::new();
+        tree.add_node(Node::new(4, "E"));
+        tree.add_node(Node::new(4, "E"));
+        assert_eq!(tree.node_list.len, 1);
+    }
+
+    #[test]
     fn test_run_calc() {
         let mut tree = Tree::new();
         tree.add_node(Node::new(5, "A"));

@@ -1,5 +1,5 @@
 [package]
-name = "testrepo"
+name = "Rust Algorithms"
 version = "0.1.0"
 authors = ["Julian Blazek <mail@nailuj.net>","Nick Grüßner <n.gruessner@t-online.de>"]
 edition = "2018"
