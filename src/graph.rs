@@ -255,7 +255,7 @@ impl SearchResult {
 
     /// Part of the builder pattern for a Link.
     /// 
-    /// For more information see the Link::new() documentation.
+    /// For more information see the SearchResult::new() documentation.
     pub fn links(mut self, links: Vec<Link>) -> Self {
         self.links = links;
         self
@@ -263,7 +263,7 @@ impl SearchResult {
     
     /// Part of the builder pattern for a Link.
     /// 
-    /// For more information see the Link::new() documentation.
+    /// For more information see the SearchResult::new() documentation.
     pub fn cost(mut self, cost: usize) -> Self {
         self.cost = cost;
         self
