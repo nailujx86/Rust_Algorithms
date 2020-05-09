@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["Link",""],["Node",""],["Tree",""]]});
