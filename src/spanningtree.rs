@@ -53,7 +53,9 @@ impl Node {
         }
     }
 
-    /// Receives a suggestion for a path to a node. If the path seems to go to the root node or is smaller than the already known path it gets accepted by the node.
+    /// Receives a suggestion for a path to a node. 
+    /// If the path seems to go to the root node or 
+    /// is smaller than the already known path it gets accepted by the node.
     /// 
     /// Since a tree is to be balanced towards the node with the lowest weight,
     /// a node will only accept a path suggestion to the assumed root of the tree
