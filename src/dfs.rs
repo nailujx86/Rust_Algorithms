@@ -4,6 +4,7 @@ use crate::graph::*;
 /// 
 /// This function takes two node ids, for the start and target node, and computes a path between them.
 /// This path consists of a Vec of Links.
+/// The first link is always from the first element to itself.
 /// # Example:
 /// ```rust
 /// use rust_algorithms::graph::*;
@@ -31,6 +32,8 @@ pub fn dfs_search_node(
     start_node_id: isize,
     search_node_id: isize,
 ) -> Option<SearchResult> {
+
+    // if start node is the node searched for, return a link to itself
     if start_node_id == search_node_id {
         return Some(
             SearchResult::new()
@@ -39,8 +42,10 @@ pub fn dfs_search_node(
         );
     }
 
+    // call the recursive function with the link from the start element to itself as first link
     let result = search_node_recursive(&mut graph, start_node_id, search_node_id, vec!(Link::new((0,0),0)));
     
+    // compute the total link cost and return the result
     match result {
         Some(mut res) => {
             let mut cost: usize = 0;
@@ -63,21 +68,23 @@ fn search_node_recursive(
     link_chain: Vec<Link>,
 ) -> Option<SearchResult> {
 
-    // Abort condition: check, if current node is the one searched for.
+    // Abort condition: check if the current node is the one searched for.
     if start_node_id == search_node_id {
         return Some(SearchResult::new().links(link_chain).cost(0));
     }
 
-    // make a new stack for all links from the current node
+    // make a new stack
     let mut stack: Vec<(&Link, isize)> = Vec::new();
     let mygraph = graph.clone();
+
+    // find all links going out from the current start_node
     for link in mygraph.find_links_from_node(start_node_id) {
         let other_node = if link.members.0 == start_node_id {
             link.members.1
         } else {
             link.members.0
         };
-
+        // if a node was found on the other end of the link, push it onto the stack
         if let Some(node) = graph.get_node(other_node) {
             if !node.is_discovered {
                 stack.push((link, other_node));
@@ -86,11 +93,16 @@ fn search_node_recursive(
         }
     }
 
-    // recursively visit every element on the stack
+    // visit every element on the stack
     while !stack.is_empty() {
+        // we can safely unwrap(), as we checked for is_empty() in the while loop
         let stack_element = stack.pop().unwrap();
+        
+        // clone the link chain and add the link to the new element to it
         let mut new_vector = link_chain.clone();
         new_vector.push(*stack_element.0);
+
+        // recursively call the function for the new element
         if let Some(result) =
             search_node_recursive(graph, stack_element.1, search_node_id, new_vector)
         {

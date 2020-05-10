@@ -4,6 +4,7 @@ use crate::graph::*;
 /// 
 /// This function takes two node ids, for the start and target node, and computes a path between them.
 /// This path consists of a Vec of Links.
+/// The first link is always from the first element to itself.
 /// # Example:
 /// ```rust
 /// use rust_algorithms::graph::*;
@@ -50,6 +51,8 @@ pub fn bfs_search_node(
     vector.push(Link::new((start_node_id, start_node_id), 0));
     queue.push_front((start_node_id, vector));
 
+    // retrieve the start node from the graph and mark it as visited.
+    // if it does not exist, there cannot be a path, return None.
     let mut start_node = match graph.get_node(start_node_id) {
         Some(node) => node,
         None => {
@@ -58,11 +61,13 @@ pub fn bfs_search_node(
     };
     start_node.is_discovered = true;
 
+    // iterate through the queue
     while !queue.is_empty() {
         // The while loop guarantees that there is something to pop, so unwrapping is safe
         let current_queue_element = queue.pop_front().unwrap();
         let current_node = current_queue_element.0;
 
+        // abort case: node searched for is found. Add up link cost and return result.
         if current_node == search_node_id {
             let mut cost = 0;
             for link in current_queue_element.1.iter() {
@@ -73,22 +78,33 @@ pub fn bfs_search_node(
                     .cost(cost)
                     .links(current_queue_element.1),
             );
-        } else {
+        }
+        // this node was not the one searched for. 
+        else {
+
+            // find all links from this node
             let mygraph = graph.clone();
             let links = mygraph.find_links_from_node(current_node);
             for link in links {
                 //ignore circular links (from object to itself)
                 if link.members.0 != link.members.1 {
+                    // get the node_id of the node on the other end of the link
                     let found_node: isize = if link.members.0 == current_node {
                         link.members.1
                     } else {
                         link.members.0
                     };
+
+                    // if the node can be found inside the graph
                     if let Some(node) = graph.get_node(found_node) {
+                        // and it has not been discovered yet
                         if !node.is_discovered {
+                            // push the link to it to a new linklist
                             let mut new_vector = current_queue_element.1.clone();
                             new_vector.push(*link);
+                            // and add that and the node to the queue
                             queue.push_back((found_node, new_vector));
+                            // mark the node as visited, as it will be processed
                             node.is_discovered = true;
                         }
                     }
@@ -97,6 +113,7 @@ pub fn bfs_search_node(
         }
     }
 
+    // if the queue is empty and no element was found, return None.
     None
 }
 
